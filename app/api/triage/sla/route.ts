@@ -22,8 +22,9 @@ export async function PATCH(request: NextRequest) {
   }
 
   const parsed = entries.map((entry) => {
-    const item = entry as { channel?: unknown; sla_minutes?: unknown };
+    const item = entry as { team?: unknown; channel?: unknown; sla_minutes?: unknown };
     return {
+      team: typeof item.team === "string" && item.team.trim() ? item.team.trim() : "default",
       channel: typeof item.channel === "string" ? item.channel : "",
       sla_minutes: Number(item.sla_minutes),
     };

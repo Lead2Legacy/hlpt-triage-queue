@@ -1,7 +1,7 @@
 import Database from "better-sqlite3";
 import path from "node:path";
 import { computeSlaBand } from "./format";
-import { ChannelState, TeamState, TicketRow, TicketState, TriageState } from "./types";
+import { ChannelState, SlaConfigRow, TeamState, TicketRow, TicketState, TriageState } from "./types";
 
 const DEFAULT_SLA: Record<string, number> = {
   "live-chat": 5,
@@ -46,15 +46,42 @@ function migrate(database: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_tickets_open ON tickets(resolved_at, team, channel);
 
     CREATE TABLE IF NOT EXISTS sla_config (
-      channel TEXT PRIMARY KEY,
-      sla_minutes INTEGER NOT NULL
+      team TEXT NOT NULL DEFAULT 'default',
+      channel TEXT NOT NULL,
+      sla_minutes INTEGER NOT NULL,
+      PRIMARY KEY (team, channel)
     );
   `);
 
+  const columns = database.prepare("PRAGMA table_info(sla_config)").all() as { name: string }[];
+  if (!columns.some((column) => column.name === "team")) {
+    database.exec("ALTER TABLE sla_config ADD COLUMN team TEXT NOT NULL DEFAULT 'default'");
+  }
+
+  const postAlterColumns = database.prepare("PRAGMA table_info(sla_config)").all() as { name: string; pk: number }[];
+  const pkColumns = postAlterColumns.filter((column) => column.pk > 0).sort((a, b) => a.pk - b.pk).map((column) => column.name);
+  const hasCompositePrimaryKey = pkColumns.join(":") === "team:channel";
+  if (!hasCompositePrimaryKey) {
+    database.exec(`
+      CREATE TABLE sla_config_next (
+        team TEXT NOT NULL DEFAULT 'default',
+        channel TEXT NOT NULL,
+        sla_minutes INTEGER NOT NULL,
+        PRIMARY KEY (team, channel)
+      );
+
+      INSERT OR REPLACE INTO sla_config_next (team, channel, sla_minutes)
+      SELECT COALESCE(team, 'default'), channel, sla_minutes FROM sla_config;
+
+      DROP TABLE sla_config;
+      ALTER TABLE sla_config_next RENAME TO sla_config;
+    `);
+  }
+
   const insertSla = database.prepare(`
-    INSERT INTO sla_config (channel, sla_minutes)
-    VALUES (?, ?)
-    ON CONFLICT(channel) DO NOTHING
+    INSERT INTO sla_config (team, channel, sla_minutes)
+    VALUES ('default', ?, ?)
+    ON CONFLICT(team, channel) DO NOTHING
   `);
 
   for (const [channel, minutes] of Object.entries(DEFAULT_SLA)) {
@@ -122,20 +149,20 @@ export function resolveTicket(sourcePlatform: string, sourceTicketId: string) {
 
 export function getSlaConfig() {
   return getDb()
-    .prepare("SELECT channel, sla_minutes FROM sla_config ORDER BY channel")
-    .all() as { channel: string; sla_minutes: number }[];
+    .prepare("SELECT team, channel, sla_minutes FROM sla_config ORDER BY team, channel")
+    .all() as SlaConfigRow[];
 }
 
-export function patchSlaConfig(entries: { channel: string; sla_minutes: number }[]) {
+export function patchSlaConfig(entries: { team?: string; channel: string; sla_minutes: number }[]) {
   const stmt = getDb().prepare(`
-    INSERT INTO sla_config (channel, sla_minutes)
-    VALUES (?, ?)
-    ON CONFLICT(channel) DO UPDATE SET sla_minutes = excluded.sla_minutes
+    INSERT INTO sla_config (team, channel, sla_minutes)
+    VALUES (?, ?, ?)
+    ON CONFLICT(team, channel) DO UPDATE SET sla_minutes = excluded.sla_minutes
   `);
 
-  const tx = getDb().transaction((items: { channel: string; sla_minutes: number }[]) => {
+  const tx = getDb().transaction((items: { team?: string; channel: string; sla_minutes: number }[]) => {
     for (const item of items) {
-      stmt.run(item.channel, item.sla_minutes);
+      stmt.run(item.team || "default", item.channel, item.sla_minutes);
     }
   });
 
@@ -145,7 +172,8 @@ export function patchSlaConfig(entries: { channel: string; sla_minutes: number }
 export function getTriageState(): TriageState {
   const now = Date.now();
   const slaRows = getSlaConfig();
-  const slaByChannel = new Map(slaRows.map((row) => [row.channel, row.sla_minutes]));
+  const slaByKey = new Map(slaRows.map((row) => [row.team + ":" + row.channel, row.sla_minutes]));
+  const lookupSla = (team: string, channel: string) => slaByKey.get(team + ":" + channel) ?? slaByKey.get("default:" + channel) ?? 30;
   const rows = getDb()
     .prepare(
       `
@@ -158,7 +186,7 @@ export function getTriageState(): TriageState {
     .all() as TicketRow[];
 
   const tickets: TicketState[] = rows.map((ticket) => {
-    const slaMinutes = slaByChannel.get(ticket.channel) ?? 30;
+    const slaMinutes = lookupSla(ticket.team, ticket.channel);
     const ageMs = Math.max(0, now - ticket.opened_at);
     const ageMinutes = ageMs / 60000;
     return {
@@ -187,9 +215,10 @@ export function getTriageState(): TriageState {
       const sorted = channelTickets.sort((a, b) => b.age_ms - a.age_ms);
       const worst = sorted[0];
       return {
+        team,
         channel,
         source_platform: worst?.source_platform ?? "",
-        sla_minutes: slaByChannel.get(channel) ?? 30,
+        sla_minutes: lookupSla(team, channel),
         open_count: sorted.length,
         worst_age_ms: worst?.age_ms ?? 0,
         worst_band: worst?.sla_band ?? "green",

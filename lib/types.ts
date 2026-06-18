@@ -22,6 +22,7 @@ export type TicketState = TicketRow & {
 };
 
 export type ChannelState = {
+  team: string;
   channel: string;
   source_platform: string;
   sla_minutes: number;
@@ -52,4 +53,10 @@ export type TriageState = {
     avg_first_response_minutes: number;
   };
   teams: TeamState[];
+};
+
+export type SlaConfigRow = {
+  team: string;
+  channel: string;
+  sla_minutes: number;
 };

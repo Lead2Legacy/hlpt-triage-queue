@@ -1,5 +1,7 @@
 # HLPT Triage Queue
 
+> If you're handing this to a deploy team, send them [HANDOFF.md](./HANDOFF.md).
+
 Master support SLA dashboard for HLPT. Zapier posts tickets into a local Next.js app, the app stores open tickets in SQLite, and the dashboard polls every 10 seconds.
 
 ## Run locally

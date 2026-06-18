@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="720" viewBox="0 0 1120 720" role="img" aria-label="Zapier Webhooks by Zapier POST configuration reference">
+  <rect width="1120" height="720" fill="#f7f8fb"/>
+  <rect x="36" y="32" width="1048" height="656" rx="18" fill="#ffffff" stroke="#d7dce5"/>
+  <text x="70" y="86" fill="#2d3340" font-family="Arial, sans-serif" font-size="28" font-weight="700">Webhooks by Zapier - POST</text>
+  <text x="70" y="126" fill="#5b6474" font-family="Arial, sans-serif" font-size="18">Use this shape for Intercom, HelpScout, OpenPhone, and Slack Zaps.</text>
+  <rect x="70" y="166" width="980" height="58" rx="10" fill="#f1f4f9" stroke="#d7dce5"/>
+  <text x="94" y="202" fill="#2d3340" font-family="Arial, sans-serif" font-size="18" font-weight="700">URL</text>
+  <text x="250" y="202" fill="#1b6cff" font-family="Menlo, monospace" font-size="17">https://YOUR-HOST/api/triage/ingest</text>
+  <rect x="70" y="244" width="980" height="58" rx="10" fill="#f1f4f9" stroke="#d7dce5"/>
+  <text x="94" y="280" fill="#2d3340" font-family="Arial, sans-serif" font-size="18" font-weight="700">Payload Type</text>
+  <text x="250" y="280" fill="#2d3340" font-family="Menlo, monospace" font-size="17">json</text>
+  <rect x="70" y="322" width="980" height="182" rx="10" fill="#f1f4f9" stroke="#d7dce5"/>
+  <text x="94" y="358" fill="#2d3340" font-family="Arial, sans-serif" font-size="18" font-weight="700">Data</text>
+  <text x="250" y="358" fill="#2d3340" font-family="Menlo, monospace" font-size="16">source_ticket_id: {{ticket_id}}</text>
+  <text x="250" y="388" fill="#2d3340" font-family="Menlo, monospace" font-size="16">source_platform: helpscout</text>
+  <text x="250" y="418" fill="#2d3340" font-family="Menlo, monospace" font-size="16">source_url: {{ticket_url}}</text>
+  <text x="250" y="448" fill="#2d3340" font-family="Menlo, monospace" font-size="16">team: agency-support</text>
+  <text x="250" y="478" fill="#2d3340" font-family="Menlo, monospace" font-size="16">channel: email</text>
+  <rect x="70" y="524" width="980" height="92" rx="10" fill="#f1f4f9" stroke="#d7dce5"/>
+  <text x="94" y="560" fill="#2d3340" font-family="Arial, sans-serif" font-size="18" font-weight="700">Headers</text>
+  <text x="250" y="560" fill="#2d3340" font-family="Menlo, monospace" font-size="16">Content-Type: application/json</text>
+  <text x="250" y="590" fill="#2d3340" font-family="Menlo, monospace" font-size="16">X-Triage-Token: {{TRIAGE_INGEST_TOKEN}}</text>
+  <rect x="70" y="636" width="158" height="34" rx="17" fill="#ff4f00"/>
+  <text x="100" y="659" fill="#ffffff" font-family="Arial, sans-serif" font-size="15" font-weight="700">Test step</text>
+</svg>

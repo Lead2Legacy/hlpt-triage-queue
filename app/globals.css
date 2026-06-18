@@ -100,6 +100,7 @@ a:hover {
 }
 
 .pill {
+  appearance: none;
   background: var(--panel);
   border: 1px solid var(--line);
   padding: 8px 12px;
@@ -110,6 +111,7 @@ a:hover {
   align-items: center;
   gap: 8px;
   white-space: nowrap;
+  cursor: pointer;
 }
 
 .pill b {
@@ -504,6 +506,103 @@ a:hover {
   margin-bottom: 14px;
 }
 
+.settings-page {
+  display: grid;
+  gap: 18px;
+}
+
+.settings-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px;
+}
+
+.settings-panel h2 {
+  font-size: 16px;
+  margin: 0 0 6px;
+}
+
+.settings-panel p {
+  color: var(--ink-dim);
+  font-size: 13px;
+  margin: 0;
+}
+
+.primary-button {
+  appearance: none;
+  align-self: center;
+  background: rgba(106, 167, 255, 0.12);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 14px;
+}
+
+.settings-grid {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.settings-row {
+  display: grid;
+  grid-template-columns: 1.2fr repeat(4, 1fr);
+  gap: 1px;
+  background: var(--line);
+}
+
+.settings-row > div,
+.settings-row label {
+  background: var(--panel);
+  padding: 12px;
+}
+
+.settings-head > div {
+  background: var(--panel-2);
+  color: var(--ink-dim);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.team-label {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.settings-row label {
+  display: grid;
+  gap: 6px;
+}
+
+.settings-row label span {
+  color: var(--ink-mute);
+  display: none;
+  font-size: 11px;
+}
+
+.settings-row input {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  font-size: 16px;
+  padding: 8px 10px;
+  width: 100%;
+}
+
 .breach-flash {
   box-shadow: 0 0 0 1px rgba(255, 84, 112, 0.6), 0 0 24px rgba(255, 84, 112, 0.15);
 }
@@ -544,5 +643,22 @@ a:hover {
 
   .search {
     width: 100%;
+  }
+
+  .settings-panel {
+    display: grid;
+  }
+
+  .settings-row,
+  .settings-head {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-head {
+    display: none;
+  }
+
+  .settings-row label span {
+    display: block;
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { channelIcon, displayChannel, displayTeam } from "@/lib/format";
 import { ChannelState, SlaBand, TeamState, TicketState, TriageState } from "@/lib/types";
 
@@ -135,11 +136,36 @@ function TicketRow({ ticket, now }: { ticket: TicketState; now: number }) {
   );
 }
 
+function playSoftChime() {
+  const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AudioContextClass) return;
+
+  const context = new AudioContextClass();
+  const gain = context.createGain();
+  gain.gain.setValueAtTime(0.0001, context.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.08, context.currentTime + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.45);
+  gain.connect(context.destination);
+
+  for (const [index, frequency] of [660, 880].entries()) {
+    const oscillator = context.createOscillator();
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(frequency, context.currentTime + index * 0.08);
+    oscillator.connect(gain);
+    oscillator.start(context.currentTime + index * 0.08);
+    oscillator.stop(context.currentTime + 0.45);
+  }
+
+  window.setTimeout(() => void context.close(), 700);
+}
+
 export default function TriageDashboard() {
   const [state, setState] = useState<TriageState | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [search, setSearch] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [alertEnabled, setAlertEnabled] = useState(false);
+  const [alertedTickets, setAlertedTickets] = useState<Set<number>>(() => new Set());
 
   useEffect(() => {
     let active = true;
@@ -171,12 +197,42 @@ export default function TriageDashboard() {
     return () => window.clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    setAlertEnabled(window.localStorage.getItem("triage-audible-alert") === "on");
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem("triage-audible-alert", alertEnabled ? "on" : "off");
+  }, [alertEnabled]);
+
+  useEffect(() => {
+    if (!alertEnabled || !state) return;
+
+    const redTickets = state.teams.flatMap((team) => team.channels).flatMap((channel) => channel.tickets).filter((ticket) => bandFor(now - ticket.opened_at, ticket.sla_minutes) === "red");
+    const fresh = redTickets.filter((ticket) => !alertedTickets.has(ticket.id));
+    if (fresh.length === 0) return;
+
+    playSoftChime();
+    setAlertedTickets((current) => {
+      const next = new Set(current);
+      for (const ticket of fresh) next.add(ticket.id);
+      return next;
+    });
+  }, [alertEnabled, alertedTickets, now, state]);
+
   const teams = useMemo(() => filterTeams(state?.teams ?? [], search), [state, search]);
   const worst = state?.totals.worst_ticket;
   const worstDelta = worst
     ? displayTeam(worst.team) + " · " + displayChannel(worst.channel) + " · " + worst.source_ticket_id
     : "No open tickets";
   const lastSync = state ? new Date(state.generated_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "loading";
+  const toggleAlert = () => {
+    setAlertEnabled((value) => {
+      const next = !value;
+      if (next) playSoftChime();
+      return next;
+    });
+  };
 
   return (
     <>
@@ -199,6 +255,12 @@ export default function TriageDashboard() {
           <span className="pill">
             Last sync <b>{lastSync}</b>
           </span>
+          <button className={["pill", alertEnabled ? "danger" : ""].filter(Boolean).join(" ")} onClick={toggleAlert} type="button">
+            Chime <b>{alertEnabled ? "on" : "off"}</b>
+          </button>
+          <Link className="pill" href="/settings">
+            Settings
+          </Link>
         </div>
       </div>
 
